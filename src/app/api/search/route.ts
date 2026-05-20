@@ -19,6 +19,16 @@ export async function GET(request: Request) {
     }
     const endpoint = type === 'movies' ? 'search/movie' : 'search/tv';
     url = `https://api.themoviedb.org/3/${endpoint}?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=es-ES&page=${page}`;
+  } else if (mode === 'details') {
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+    if (type === 'movies') {
+      url = `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_KEY}&language=es-ES`;
+    } else {
+      url = `https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}&language=es-ES&append_to_response=external_ids`;
+    }
   } else {
     // Mode is trending/now_playing
     if (type === 'movies') {

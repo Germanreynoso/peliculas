@@ -462,6 +462,41 @@ nav a.active::after {
     to { transform: rotate(360deg); }
 }
 
+/* Provider Selector inside Modal */
+.provider-selector {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    z-index: 2002;
+    padding: 0 1rem;
+}
+
+.provider-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    padding: 0.6rem 1.4rem;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.provider-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.provider-btn.active {
+    background: var(--accent-gradient);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
 /* Media Queries para Responsividad */
 @media (max-width: 1024px) {
     .hero-dolf-img {

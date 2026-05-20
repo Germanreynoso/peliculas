@@ -30,6 +30,7 @@ export default function Home() {
   
   // Player state
   const [playerItem, setPlayerItem] = useState<any | null>(null);
+  const [activeProvider, setActiveProvider] = useState<'main' | 'latino' | 'alternative'>('main');
 
   useEffect(() => {
     setCurrentPage(1);
@@ -156,8 +157,24 @@ export default function Home() {
 
   const currentLoading = isSearching ? searchLoading : loading;
 
-  const openPlayer = (item: any) => {
-    setPlayerItem(item);
+  const openPlayer = async (item: any) => {
+    let updatedItem = { ...item };
+    
+    // Si no tenemos el imdb_id y tenemos el tmdb_id, busquemos detalles de forma silenciosa y ultra rápida
+    if (!updatedItem.imdb_id && updatedItem.tmdb_id) {
+      try {
+        const res = await fetch(`/api/search?mode=details&type=${updatedItem.type === 'tv' ? 'tv' : 'movies'}&id=${updatedItem.tmdb_id}`);
+        if (res.ok) {
+          const details = await res.json();
+          updatedItem.imdb_id = details.imdb_id || details.external_ids?.imdb_id;
+        }
+      } catch (error) {
+        console.error('Error fetching details:', error);
+      }
+    }
+    
+    setPlayerItem(updatedItem);
+    setActiveProvider('main');
     document.body.style.overflow = 'hidden';
   };
 
@@ -166,15 +183,40 @@ export default function Home() {
     document.body.style.overflow = '';
   };
 
-  const getEmbedUrl = (item: any) => {
+  const getEmbedUrl = (item: any, provider: 'main' | 'latino' | 'alternative') => {
+    const tmdbId = item.tmdb_id;
+    const imdbId = item.imdb_id;
+    const id = imdbId || tmdbId; // VAPlayer prefiere IMDb para movies, los demás soportan ambos
+    const isMovie = item.type === 'movie' || (!item.type && item.embed_url && item.embed_url.includes('movie'));
     const colorParam = '?primaryColor=%236366f1';
-    if (item.type === 'movie' || (!item.type && item.embed_url && item.embed_url.includes('movie'))) {
-      const id = item.imdb_id || item.tmdb_id;
-      return `https://vaplayer.ru/embed/movie/${id}${colorParam}`;
-    } else {
-      const id = item.tmdb_id || item.imdb_id;
-      return `https://vaplayer.ru/embed/tv/${id}/1/1${colorParam}`;
+
+    if (provider === 'main') {
+      if (isMovie) {
+        return `https://vaplayer.ru/embed/movie/${id}${colorParam}`;
+      } else {
+        return `https://vaplayer.ru/embed/tv/${tmdbId || imdbId}/1/1${colorParam}`;
+      }
     }
+    
+    if (provider === 'latino') {
+      // vidsrc.cc es un servidor premium con excelente tasa de evasión de bloqueos de ISP en Latinoamérica y cuenta con pistas de audio multi-idioma (incluyendo Latino) integradas en el reproductor
+      if (isMovie) {
+        return `https://vidsrc.cc/v2/embed/movie/${tmdbId || id}`;
+      } else {
+        return `https://vidsrc.cc/v2/embed/tv/${tmdbId || id}/1/1`;
+      }
+    }
+
+    if (provider === 'alternative') {
+      // vidsrc.to es el servidor alternativo rápido. Se eliminó el parámetro colorParam que provocaba errores de carga en su enrutador estricto
+      if (isMovie) {
+        return `https://vidsrc.to/embed/movie/${tmdbId || imdbId}`;
+      } else {
+        return `https://vidsrc.to/embed/tv/${tmdbId || imdbId}/1/1`;
+      }
+    }
+
+    return '';
   };
 
   return (
@@ -317,9 +359,33 @@ export default function Home() {
       {/* Player Modal */}
       <div className={`player-modal ${playerItem ? 'active' : ''}`}>
         <button className="close-btn" onClick={closePlayer}>&times;</button>
+        
+        {playerItem && (
+          <div className="provider-selector">
+            <button 
+              className={`provider-btn ${activeProvider === 'main' ? 'active' : ''}`}
+              onClick={() => setActiveProvider('main')}
+            >
+              🚀 Servidor Principal
+            </button>
+            <button 
+              className={`provider-btn ${activeProvider === 'latino' ? 'active' : ''}`}
+              onClick={() => setActiveProvider('latino')}
+            >
+              🇲🇽 Servidor Latino
+            </button>
+            <button 
+              className={`provider-btn ${activeProvider === 'alternative' ? 'active' : ''}`}
+              onClick={() => setActiveProvider('alternative')}
+            >
+              💎 Servidor HD / Multi
+            </button>
+          </div>
+        )}
+
         <div className="iframe-container">
           {playerItem && (
-            <iframe src={getEmbedUrl(playerItem)} width="100%" height="100%" frameBorder="0" allowFullScreen></iframe>
+            <iframe src={getEmbedUrl(playerItem, activeProvider)} width="100%" height="100%" frameBorder="0" allowFullScreen></iframe>
           )}
         </div>
       </div>
