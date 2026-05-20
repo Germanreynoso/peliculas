@@ -4,6 +4,15 @@ import { useEffect, useState, useMemo } from 'react';
 
 const API_BASE = 'https://vidapi.ru';
 
+const TMDB_GENRES: { [key: number]: string } = {
+  28: 'Acción', 12: 'Aventura', 16: 'Animación', 35: 'Comedia', 80: 'Crimen',
+  99: 'Documental', 18: 'Drama', 10751: 'Familia', 14: 'Fantasía', 36: 'Historia',
+  27: 'Terror', 10402: 'Música', 9648: 'Misterio', 10749: 'Romance', 878: 'Ciencia Ficción',
+  10770: 'Película de TV', 53: 'Suspense', 10752: 'Bélica', 37: 'Western',
+  10759: 'Acción y Aventura', 10762: 'Infantil', 10763: 'Noticias', 10764: 'Reality',
+  10765: 'Sci-Fi y Fantasía', 10766: 'Telenovela', 10767: 'Charla', 10768: 'Guerra y Política'
+};
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'movies' | 'tv'>('movies');
   const [items, setItems] = useState<any[]>([]);
@@ -45,7 +54,7 @@ export default function Home() {
           poster_url: r.poster_path ? `https://image.tmdb.org/t/p/w500${r.poster_path}` : null,
           rating: r.vote_average ? r.vote_average.toFixed(1) : 'N/A',
           type: type === 'movies' ? 'movie' : 'tv',
-          genre: 'Búsqueda Global'
+          genre: r.genre_ids ? r.genre_ids.map((id: number) => TMDB_GENRES[id] || '').filter(Boolean).join(', ') : 'Búsqueda Global'
         }));
         setSearchResults(mapped);
       }
@@ -71,14 +80,23 @@ export default function Home() {
   const fetchData = async (type: 'movies' | 'tv', page = 1) => {
     if (page === 1) setLoading(true);
     try {
-      const endpoint = type === 'movies' ? `/movies/latest/page-${page}.json` : `/tvshows/latest/page-${page}.json`;
-      const res = await fetch(`${API_BASE}${endpoint}`);
+      const res = await fetch(`/api/search?mode=trending&type=${type}&page=${page}`);
       if (res.ok) {
         const data = await res.json();
+        const mapped = (data.results || []).map((r: any) => ({
+          tmdb_id: r.id,
+          title: r.title || r.name,
+          year: (r.release_date || r.first_air_date || '').substring(0, 4),
+          poster_url: r.poster_path ? `https://image.tmdb.org/t/p/w500${r.poster_path}` : null,
+          rating: r.vote_average ? r.vote_average.toFixed(1) : 'N/A',
+          type: type === 'movies' ? 'movie' : 'tv',
+          genre: r.genre_ids ? r.genre_ids.map((id: number) => TMDB_GENRES[id] || '').filter(Boolean).join(', ') : 'General'
+        }));
+
         if (page === 1) {
-          setItems(data.items || []);
+          setItems(mapped);
         } else {
-          setItems(prev => [...prev, ...(data.items || [])]);
+          setItems(prev => [...prev, ...mapped]);
         }
         setTotalPages(data.total_pages || 1);
       }
@@ -162,11 +180,19 @@ export default function Home() {
   return (
     <>
       <header className="navbar">
-        <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <a href="#" className="logo" onClick={(e) => { 
+          e.preventDefault(); 
+          setActiveTab('movies');
+          setSearchTerm('');
+          setSelectedGenre('');
+          setSortBy('default');
+          setIsSearching(false);
+          fetchData('movies', 1);
+        }} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Pelis Dolf Logo" style={{ height: '60px', width: '60px', borderRadius: '50%', objectFit: 'cover' }} />
-          Pelis<span>Dolf</span>
-        </div>
+          <img src="/logo.png" alt="Cinema Dolphin Logo" style={{ height: '60px', width: '60px', borderRadius: '50%', objectFit: 'cover' }} />
+          Cinema<span>Dolphin</span>
+        </a>
         <nav>
           <a href="#" className={activeTab === 'movies' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('movies'); }}>Películas</a>
           <a href="#" className={activeTab === 'tv' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('tv'); }}>Series</a>
@@ -210,19 +236,13 @@ export default function Home() {
         {/* Hero Section */}
         {!currentLoading && heroItem && (
           <section className="hero">
-            <div className="hero-wrapper">
-              <div className="hero-content">
-                <h1>{heroItem.title}</h1>
-                <p>{heroItem.year ? `(${heroItem.year})` : ''} • ⭐ {heroItem.rating || 'N/A'} • {heroItem.genre || ''}</p>
-                <button className="btn-primary" onClick={() => openPlayer(heroItem)}>
-                  <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M8 5v14l11-7z"/></svg>
-                  Ver Ahora
-                </button>
-              </div>
-              <div className="hero-logo-container">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.png" alt="Mascota Pelis Dolf" className="hero-dolf-img" />
-              </div>
+            <div className="hero-content">
+              <h1>{heroItem.title}</h1>
+              <p>{heroItem.year ? `(${heroItem.year})` : ''} • ⭐ {heroItem.rating || 'N/A'} • {heroItem.genre || ''}</p>
+              <button className="btn-primary" onClick={() => openPlayer(heroItem)}>
+                <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M8 5v14l11-7z"/></svg>
+                Ver Ahora
+              </button>
             </div>
             <div className="hero-overlay"></div>
             {heroItem.poster_url && (
@@ -277,6 +297,22 @@ export default function Home() {
           )}
         </section>
       </main>
+
+      {/* Footer */}
+      <footer className="footer">
+        <div className="footer-content">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Cinema Dolphin Logo" className="footer-logo" />
+          <h3>Cinema<span>Dolphin</span></h3>
+          <p>El mejor catálogo de películas y series en un solo lugar. ¡Disfruta del streaming ilimitado sin cortes!</p>
+          <div className="footer-links">
+            <a href="#">Inicio</a>
+            <a href="#main-content">Catálogo</a>
+            <a href="#">Contacto</a>
+          </div>
+          <p className="copyright">© {new Date().getFullYear()} Cinema Dolphin. Creado con amor por el equipo de diseño.</p>
+        </div>
+      </footer>
 
       {/* Player Modal */}
       <div className={`player-modal ${playerItem ? 'active' : ''}`}>

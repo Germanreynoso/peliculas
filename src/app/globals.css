@@ -48,6 +48,9 @@ h1, h2, h3, .logo {
     font-size: 1.8rem;
     font-weight: 800;
     letter-spacing: 1px;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
 }
 
 .logo span {
@@ -165,34 +168,77 @@ nav a.active::after {
     z-index: -1;
 }
 
-.hero-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    z-index: 1;
+/* Footer Styles */
+.footer {
+    background: linear-gradient(to top, rgba(7, 9, 15, 0.95), rgba(13, 16, 26, 0.8));
+    border-top: 1px solid var(--glass-border);
+    padding: 4rem 2rem 2rem;
+    margin-top: 5rem;
+    text-align: center;
 }
 
-.hero-dolf-img {
-    width: 350px;
-    height: 350px;
+.footer-content {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.footer-logo {
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
     object-fit: cover;
-    box-shadow: 0 0 50px rgba(99, 102, 241, 0.4);
-    animation: float 6s ease-in-out infinite;
-    display: none;
+    box-shadow: 0 0 40px rgba(99, 102, 241, 0.4);
+    animation: pulseLogo 3s infinite ease-in-out;
 }
 
-@media (min-width: 1024px) {
-    .hero-dolf-img {
-        display: block;
-    }
+.footer h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
 }
 
-@keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
-    100% { transform: translateY(0px); }
+.footer h3 span {
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.footer p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.footer-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.footer-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.footer-links a:hover {
+    color: var(--accent-primary);
+}
+
+.copyright {
+    font-size: 0.8rem !important;
+    opacity: 0.6;
+    margin-top: 2rem;
+}
+
+@keyframes pulseLogo {
+    0% { transform: scale(1); box-shadow: 0 0 40px rgba(99, 102, 241, 0.4); }
+    50% { transform: scale(1.05); box-shadow: 0 0 60px rgba(99, 102, 241, 0.6); }
+    100% { transform: scale(1); box-shadow: 0 0 40px rgba(99, 102, 241, 0.4); }
 }
 
 .hero-content {
@@ -416,8 +462,116 @@ nav a.active::after {
     to { transform: rotate(360deg); }
 }
 
+/* Media Queries para Responsividad */
+@media (max-width: 1024px) {
+    .hero-dolf-img {
+        display: none;
+    }
+}
+
 @media (max-width: 768px) {
-    .hero-content h1 { font-size: 2.5rem; }
-    nav { gap: 1rem; }
-    .filters-section { justify-content: center; }
+    /* Navbar */
+    .navbar {
+        height: 60px;
+        padding: 0 4%;
+    }
+    .logo {
+        font-size: 1.4rem;
+    }
+    /* Reducir tamaño del logo del delfín en móvil */
+    .logo img {
+        height: 45px !important;
+        width: 45px !important;
+    }
+    nav {
+        gap: 1.2rem;
+    }
+    nav a {
+        font-size: 0.9rem;
+    }
+
+    /* Filters Section */
+    .filters-section {
+        padding: 80px 4% 0;
+        justify-content: center;
+        gap: 0.8rem;
+    }
+    .filter-input, .filter-select {
+        max-width: 100%;
+        width: 100%; /* Ocupar todo el ancho en móviles */
+        padding: 0.7rem 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    /* Hero Section */
+    .hero {
+        height: auto;
+        min-height: 350px;
+        padding: 4rem 4% 2rem;
+        align-items: flex-end;
+    }
+    .hero-content h1 {
+        font-size: 2.2rem;
+        margin-bottom: 0.8rem;
+    }
+    .hero-content p {
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+    .btn-primary {
+        padding: 0.7rem 1.5rem;
+        font-size: 0.9rem;
+    }
+
+    /* Grid Section (2 columnas en móviles al estilo Netflix/TMDB) */
+    .content-section {
+        padding: 1.5rem 4% 3rem;
+    }
+    .section-title {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    .card-info {
+        padding: 0.8rem;
+    }
+    .card-title {
+        font-size: 0.9rem;
+    }
+    .card-meta {
+        font-size: 0.8rem;
+    }
+
+    /* Player Modal */
+    .close-btn {
+        top: 15px;
+        right: 20px;
+        font-size: 2.5rem;
+    }
+    .iframe-container {
+        width: 95%;
+        border-radius: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        padding: 0 3%;
+    }
+    /* Ocultar 'Dolphin' en pantallas ultra pequeñas para evitar desbordamiento */
+    .logo span {
+        display: none;
+    }
+    .logo {
+        font-size: 1.2rem;
+    }
+    nav {
+        gap: 0.8rem;
+    }
+    .hero-content h1 {
+        font-size: 1.8rem;
+    }
 }

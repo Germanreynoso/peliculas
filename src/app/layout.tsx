@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
 
 export const metadata: Metadata = {
-  title: 'Pelis Dolf - Plataforma de Streaming',
+  title: 'Cinema Dolphin - Plataforma de Streaming',
   description: 'Mira las últimas películas y series con nuestra plataforma premium.',
 };
 
