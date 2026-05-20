@@ -31,6 +31,27 @@ export default function Home() {
   // Player state
   const [playerItem, setPlayerItem] = useState<any | null>(null);
   const [activeProvider, setActiveProvider] = useState<'main' | 'latino' | 'alternative'>('main');
+  const [activeSeason, setActiveSeason] = useState(1);
+  const [activeEpisode, setActiveEpisode] = useState(1);
+  const [tvSeasons, setTvSeasons] = useState<any[]>([]);
+  const [seasonEpisodes, setSeasonEpisodes] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (playerItem && playerItem.type === 'tv' && playerItem.tmdb_id) {
+      const fetchEpisodes = async () => {
+        try {
+          const res = await fetch(`/api/search?mode=season&id=${playerItem.tmdb_id}&season=${activeSeason}`);
+          if (res.ok) {
+            const data = await res.json();
+            setSeasonEpisodes(data.episodes || []);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      fetchEpisodes();
+    }
+  }, [playerItem, activeSeason]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -159,14 +180,20 @@ export default function Home() {
 
   const openPlayer = async (item: any) => {
     let updatedItem = { ...item };
+    setTvSeasons([]);
+    setSeasonEpisodes([]);
     
-    // Si no tenemos el imdb_id y tenemos el tmdb_id, busquemos detalles de forma silenciosa y ultra rápida
-    if (!updatedItem.imdb_id && updatedItem.tmdb_id) {
+    if (updatedItem.tmdb_id) {
       try {
         const res = await fetch(`/api/search?mode=details&type=${updatedItem.type === 'tv' ? 'tv' : 'movies'}&id=${updatedItem.tmdb_id}`);
         if (res.ok) {
           const details = await res.json();
-          updatedItem.imdb_id = details.imdb_id || details.external_ids?.imdb_id;
+          if (!updatedItem.imdb_id) {
+            updatedItem.imdb_id = details.imdb_id || details.external_ids?.imdb_id;
+          }
+          if (updatedItem.type === 'tv' && details.seasons) {
+            setTvSeasons(details.seasons.filter((s: any) => s.season_number > 0));
+          }
         }
       } catch (error) {
         console.error('Error fetching details:', error);
@@ -175,6 +202,8 @@ export default function Home() {
     
     setPlayerItem(updatedItem);
     setActiveProvider('main');
+    setActiveSeason(1);
+    setActiveEpisode(1);
     document.body.style.overflow = 'hidden';
   };
 
@@ -183,10 +212,10 @@ export default function Home() {
     document.body.style.overflow = '';
   };
 
-  const getEmbedUrl = (item: any, provider: 'main' | 'latino' | 'alternative') => {
+  const getEmbedUrl = (item: any, provider: 'main' | 'latino' | 'alternative', season: number, episode: number) => {
     const tmdbId = item.tmdb_id;
     const imdbId = item.imdb_id;
-    const id = imdbId || tmdbId; // VAPlayer prefiere IMDb para movies, los demás soportan ambos
+    const id = imdbId || tmdbId; 
     const isMovie = item.type === 'movie' || (!item.type && item.embed_url && item.embed_url.includes('movie'));
     const colorParam = '?primaryColor=%236366f1';
 
@@ -194,25 +223,23 @@ export default function Home() {
       if (isMovie) {
         return `https://vaplayer.ru/embed/movie/${id}${colorParam}`;
       } else {
-        return `https://vaplayer.ru/embed/tv/${tmdbId || imdbId}/1/1${colorParam}`;
+        return `https://vaplayer.ru/embed/tv/${tmdbId || imdbId}/${season}/${episode}${colorParam}`;
       }
     }
     
     if (provider === 'latino') {
-      // vidsrc.cc es un servidor premium con excelente tasa de evasión de bloqueos de ISP en Latinoamérica y cuenta con pistas de audio multi-idioma (incluyendo Latino) integradas en el reproductor
       if (isMovie) {
         return `https://vidsrc.cc/v2/embed/movie/${tmdbId || id}`;
       } else {
-        return `https://vidsrc.cc/v2/embed/tv/${tmdbId || id}/1/1`;
+        return `https://vidsrc.cc/v2/embed/tv/${tmdbId || id}/${season}/${episode}`;
       }
     }
 
     if (provider === 'alternative') {
-      // vidsrc.to es el servidor alternativo rápido. Se eliminó el parámetro colorParam que provocaba errores de carga en su enrutador estricto
       if (isMovie) {
         return `https://vidsrc.to/embed/movie/${tmdbId || imdbId}`;
       } else {
-        return `https://vidsrc.to/embed/tv/${tmdbId || imdbId}/1/1`;
+        return `https://vidsrc.to/embed/tv/${tmdbId || imdbId}/${season}/${episode}`;
       }
     }
 
@@ -385,9 +412,54 @@ export default function Home() {
 
         <div className="iframe-container">
           {playerItem && (
-            <iframe src={getEmbedUrl(playerItem, activeProvider)} width="100%" height="100%" frameBorder="0" allowFullScreen></iframe>
+            <iframe src={getEmbedUrl(playerItem, activeProvider, activeSeason, activeEpisode)} width="100%" height="100%" frameBorder="0" allowFullScreen></iframe>
           )}
         </div>
+
+        {playerItem && playerItem.type === 'tv' && (
+          <div className="tv-controls">
+            <div className="season-selector-wrapper">
+              <select 
+                className="custom-select"
+                value={activeSeason} 
+                onChange={(e) => {
+                  setActiveSeason(parseInt(e.target.value));
+                  setActiveEpisode(1);
+                }}
+              >
+                {tvSeasons.length > 0 ? (
+                  tvSeasons.map((s) => (
+                    <option key={s.season_number} value={s.season_number}>
+                      Temporada {s.season_number}
+                    </option>
+                  ))
+                ) : (
+                  <option value={1}>Temporada 1</option>
+                )}
+              </select>
+            </div>
+            
+            <div className="episodes-list">
+              {seasonEpisodes.length > 0 ? (
+                seasonEpisodes.map((ep) => (
+                  <div 
+                    key={ep.episode_number} 
+                    className={`episode-card ${activeEpisode === ep.episode_number ? 'active' : ''}`}
+                    onClick={() => setActiveEpisode(ep.episode_number)}
+                  >
+                    <div className="episode-number">{ep.episode_number}</div>
+                    <div className="episode-details">
+                      <div className="episode-name">{ep.name}</div>
+                      <div className="episode-airdate">{ep.air_date ? new Date(ep.air_date).getFullYear() : ''}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="loader"></div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

@@ -407,11 +407,27 @@ nav a.active::after {
     z-index: 2000;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
+    overflow-y: auto;
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+}
+
+.player-modal::-webkit-scrollbar {
+    width: 8px;
+}
+
+.player-modal::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.player-modal::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border-radius: 10px;
 }
 
 .player-modal.active {
@@ -420,7 +436,7 @@ nav a.active::after {
 }
 
 .close-btn {
-    position: absolute;
+    position: fixed;
     top: 20px;
     right: 30px;
     background: transparent;
@@ -445,6 +461,7 @@ nav a.active::after {
     overflow: hidden;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     border: 1px solid var(--glass-border);
+    flex-shrink: 0;
 }
 
 .iframe-container iframe {
@@ -471,6 +488,7 @@ nav a.active::after {
     justify-content: center;
     z-index: 2002;
     padding: 0 1rem;
+    flex-shrink: 0;
 }
 
 .provider-btn {
@@ -495,6 +513,105 @@ nav a.active::after {
     border-color: transparent;
     color: white;
     box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+/* TV Controls & Episodes List */
+.tv-controls {
+    width: 90%;
+    max-width: 1200px;
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    flex-shrink: 0;
+}
+
+.season-selector-wrapper {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.custom-select {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--glass-border);
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease;
+    appearance: auto;
+}
+
+.custom-select:hover, .custom-select:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+}
+
+.custom-select option {
+    background: #0f172a;
+    color: white;
+    padding: 10px;
+}
+
+.episodes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding-right: 0;
+}
+
+.episode-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.episode-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--glass-border);
+}
+
+.episode-card.active {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: var(--accent-primary);
+}
+
+.episode-number {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+    min-width: 40px;
+}
+
+.episode-card.active .episode-number {
+    color: var(--accent-primary);
+}
+
+.episode-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.episode-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+}
+
+.episode-airdate {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
 }
 
 /* Media Queries para Responsividad */

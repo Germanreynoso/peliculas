@@ -29,6 +29,13 @@ export async function GET(request: Request) {
     } else {
       url = `https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}&language=es-ES&append_to_response=external_ids`;
     }
+  } else if (mode === 'season') {
+    const id = searchParams.get('id');
+    const season = searchParams.get('season');
+    if (!id || !season) {
+      return NextResponse.json({ error: 'ID and season are required' }, { status: 400 });
+    }
+    url = `https://api.themoviedb.org/3/tv/${id}/season/${season}?api_key=${TMDB_KEY}&language=es-ES`;
   } else {
     // Mode is trending/now_playing
     if (type === 'movies') {
