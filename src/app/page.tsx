@@ -15,6 +15,9 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [sortBy, setSortBy] = useState('default');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   
   // Player state
   const [playerItem, setPlayerItem] = useState<any | null>(null);
@@ -24,8 +27,46 @@ export default function Home() {
     setSearchTerm('');
     setSelectedGenre('');
     setSortBy('default');
+    setIsSearching(false);
     fetchData(activeTab, 1);
   }, [activeTab]);
+
+  const searchTMDB = async (query: string, type: 'movies' | 'tv') => {
+    setSearchLoading(true);
+    setIsSearching(true);
+    try {
+      const res = await fetch(`/api/search?query=${encodeURIComponent(query)}&type=${type}`);
+      if (res.ok) {
+        const data = await res.json();
+        const mapped = data.results.map((r: any) => ({
+          tmdb_id: r.id,
+          title: r.title || r.name,
+          year: (r.release_date || r.first_air_date || '').substring(0, 4),
+          poster_url: r.poster_path ? `https://image.tmdb.org/t/p/w500${r.poster_path}` : null,
+          rating: r.vote_average ? r.vote_average.toFixed(1) : 'N/A',
+          type: type === 'movies' ? 'movie' : 'tv',
+          genre: 'Búsqueda Global'
+        }));
+        setSearchResults(mapped);
+      }
+    } catch (error) {
+      console.error('Error searching:', error);
+    }
+    setSearchLoading(false);
+  };
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchTerm.trim() !== '') {
+        searchTMDB(searchTerm, activeTab);
+      } else {
+        setIsSearching(false);
+        setSearchResults([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, activeTab]);
 
   const fetchData = async (type: 'movies' | 'tv', page = 1) => {
     if (page === 1) setLoading(true);
@@ -68,11 +109,15 @@ export default function Home() {
 
   // Apply filters and sorting
   const filteredItems = useMemo(() => {
-    let result = items.filter(item => {
-      const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesGenre = selectedGenre === '' || (item.genre && item.genre.includes(selectedGenre));
-      return matchesSearch && matchesGenre;
-    });
+    let result = isSearching ? searchResults : items;
+    
+    if (!isSearching) {
+      result = result.filter(item => {
+        const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesGenre = selectedGenre === '' || (item.genre && item.genre.includes(selectedGenre));
+        return matchesSearch && matchesGenre;
+      });
+    }
 
     if (sortBy !== 'default') {
       result = [...result].sort((a, b) => {
@@ -86,10 +131,12 @@ export default function Home() {
     }
 
     return result;
-  }, [items, searchTerm, selectedGenre, sortBy]);
+  }, [items, searchResults, isSearching, searchTerm, selectedGenre, sortBy]);
 
   const heroItem = filteredItems.length > 0 ? filteredItems[0] : null;
   const gridItems = filteredItems.length > 1 ? filteredItems.slice(1) : filteredItems;
+
+  const currentLoading = isSearching ? searchLoading : loading;
 
   const openPlayer = (item: any) => {
     setPlayerItem(item);
@@ -115,7 +162,11 @@ export default function Home() {
   return (
     <>
       <header className="navbar">
-        <div className="logo">Vid<span>Flix</span></div>
+        <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Pelis Dolf Logo" style={{ height: '60px', width: '60px', borderRadius: '50%', objectFit: 'cover' }} />
+          Pelis<span>Dolf</span>
+        </div>
         <nav>
           <a href="#" className={activeTab === 'movies' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('movies'); }}>Películas</a>
           <a href="#" className={activeTab === 'tv' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('tv'); }}>Series</a>
@@ -157,15 +208,21 @@ export default function Home() {
         </section>
 
         {/* Hero Section */}
-        {!loading && heroItem && (
+        {!currentLoading && heroItem && (
           <section className="hero">
-            <div className="hero-content">
-              <h1>{heroItem.title}</h1>
-              <p>{heroItem.year ? `(${heroItem.year})` : ''} • ⭐ {heroItem.rating || 'N/A'} • {heroItem.genre || ''}</p>
-              <button className="btn-primary" onClick={() => openPlayer(heroItem)}>
-                <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M8 5v14l11-7z"/></svg>
-                Ver Ahora
-              </button>
+            <div className="hero-wrapper">
+              <div className="hero-content">
+                <h1>{heroItem.title}</h1>
+                <p>{heroItem.year ? `(${heroItem.year})` : ''} • ⭐ {heroItem.rating || 'N/A'} • {heroItem.genre || ''}</p>
+                <button className="btn-primary" onClick={() => openPlayer(heroItem)}>
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M8 5v14l11-7z"/></svg>
+                  Ver Ahora
+                </button>
+              </div>
+              <div className="hero-logo-container">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="Mascota Pelis Dolf" className="hero-dolf-img" />
+              </div>
             </div>
             <div className="hero-overlay"></div>
             {heroItem.poster_url && (
@@ -176,9 +233,11 @@ export default function Home() {
 
         {/* Grid Section */}
         <section className="content-section">
-          <h2 className="section-title">Resultados ({filteredItems.length})</h2>
+          <h2 className="section-title">
+            Resultados ({filteredItems.length}) {isSearching && '- Búsqueda Global'}
+          </h2>
           
-          {loading ? (
+          {currentLoading ? (
             <div className="loader"></div>
           ) : gridItems.length > 0 ? (
             <>
@@ -205,7 +264,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-              {currentPage < totalPages && (
+              {!isSearching && currentPage < totalPages && (
                 <div style={{ textAlign: 'center', marginTop: '3rem' }}>
                   <button className="btn-primary" onClick={loadMore} style={{ display: 'inline-flex', margin: '0 auto' }}>
                     Cargar más
