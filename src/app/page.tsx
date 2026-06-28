@@ -19,7 +19,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  
+
   // Filters and Sorting
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
@@ -27,7 +27,7 @@ export default function Home() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  
+
   // Player state
   const [playerItem, setPlayerItem] = useState<any | null>(null);
   const [activeProvider, setActiveProvider] = useState<'main' | 'latino' | 'alternative'>('main');
@@ -52,6 +52,17 @@ export default function Home() {
       fetchEpisodes();
     }
   }, [playerItem, activeSeason]);
+
+  // Listener opcional por si el iframe emite un evento de fin
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (typeof e.data === 'string' && (e.data.toLowerCase().includes('ended') || e.data.toLowerCase().includes('complete'))) {
+        console.log("Posible evento de fin de video detectado:", e.data);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -150,7 +161,7 @@ export default function Home() {
   // Apply filters and sorting
   const filteredItems = useMemo(() => {
     let result = isSearching ? searchResults : items;
-    
+
     if (!isSearching) {
       result = result.filter(item => {
         const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -178,11 +189,37 @@ export default function Home() {
 
   const currentLoading = isSearching ? searchLoading : loading;
 
+  const goToNextEpisode = () => {
+    const currentEpisodeIndex = seasonEpisodes.findIndex(ep => ep.episode_number === activeEpisode);
+    if (currentEpisodeIndex !== -1 && currentEpisodeIndex < seasonEpisodes.length - 1) {
+      setActiveEpisode(seasonEpisodes[currentEpisodeIndex + 1].episode_number);
+    } else {
+      const currentSeasonIndex = tvSeasons.findIndex(s => s.season_number === activeSeason);
+      if (currentSeasonIndex !== -1 && currentSeasonIndex < tvSeasons.length - 1) {
+        setActiveSeason(tvSeasons[currentSeasonIndex + 1].season_number);
+        setActiveEpisode(1);
+      }
+    }
+  };
+
+  const goToPrevEpisode = () => {
+    const currentEpisodeIndex = seasonEpisodes.findIndex(ep => ep.episode_number === activeEpisode);
+    if (currentEpisodeIndex > 0) {
+      setActiveEpisode(seasonEpisodes[currentEpisodeIndex - 1].episode_number);
+    } else {
+      const currentSeasonIndex = tvSeasons.findIndex(s => s.season_number === activeSeason);
+      if (currentSeasonIndex > 0) {
+        setActiveSeason(tvSeasons[currentSeasonIndex - 1].season_number);
+        setActiveEpisode(1);
+      }
+    }
+  };
+
   const openPlayer = async (item: any) => {
     let updatedItem = { ...item };
     setTvSeasons([]);
     setSeasonEpisodes([]);
-    
+
     if (updatedItem.tmdb_id) {
       try {
         const res = await fetch(`/api/search?mode=details&type=${updatedItem.type === 'tv' ? 'tv' : 'movies'}&id=${updatedItem.tmdb_id}`);
@@ -199,7 +236,7 @@ export default function Home() {
         console.error('Error fetching details:', error);
       }
     }
-    
+
     setPlayerItem(updatedItem);
     setActiveProvider('main');
     setActiveSeason(1);
@@ -215,7 +252,7 @@ export default function Home() {
   const getEmbedUrl = (item: any, provider: 'main' | 'latino' | 'alternative', season: number, episode: number) => {
     const tmdbId = item.tmdb_id;
     const imdbId = item.imdb_id;
-    const id = imdbId || tmdbId; 
+    const id = imdbId || tmdbId;
     const isMovie = item.type === 'movie' || (!item.type && item.embed_url && item.embed_url.includes('movie'));
     const colorParam = '?primaryColor=%236366f1';
 
@@ -226,12 +263,20 @@ export default function Home() {
         return `https://vaplayer.ru/embed/tv/${tmdbId || imdbId}/${season}/${episode}${colorParam}`;
       }
     }
-    
+
     if (provider === 'latino') {
       if (isMovie) {
-        return `https://vidsrc.cc/v2/embed/movie/${tmdbId || id}`;
+        if (imdbId) {
+          return `https://multiembed.mov/?video_id=${imdbId}`;
+        } else {
+          return `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`;
+        }
       } else {
-        return `https://vidsrc.cc/v2/embed/tv/${tmdbId || id}/${season}/${episode}`;
+        if (imdbId) {
+          return `https://multiembed.mov/?video_id=${imdbId}&s=${season}&e=${episode}`;
+        } else {
+          return `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${season}&e=${episode}`;
+        }
       }
     }
 
@@ -249,8 +294,8 @@ export default function Home() {
   return (
     <>
       <header className="navbar">
-        <a href="#" className="logo" onClick={(e) => { 
-          e.preventDefault(); 
+        <a href="#" className="logo" onClick={(e) => {
+          e.preventDefault();
           setActiveTab('movies');
           setSearchTerm('');
           setSelectedGenre('');
@@ -271,15 +316,15 @@ export default function Home() {
       <main id="main-content">
         {/* Filters Section */}
         <section className="filters-section">
-          <input 
-            type="text" 
-            placeholder="Buscar por nombre..." 
+          <input
+            type="text"
+            placeholder="Buscar por nombre..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="filter-input"
           />
-          <select 
-            value={selectedGenre} 
+          <select
+            value={selectedGenre}
             onChange={(e) => setSelectedGenre(e.target.value)}
             className="filter-select"
           >
@@ -288,8 +333,8 @@ export default function Home() {
               <option key={genre} value={genre}>{genre}</option>
             ))}
           </select>
-          <select 
-            value={sortBy} 
+          <select
+            value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="filter-select"
           >
@@ -309,7 +354,7 @@ export default function Home() {
               <h1>{heroItem.title}</h1>
               <p>{heroItem.year ? `(${heroItem.year})` : ''} • ⭐ {heroItem.rating || 'N/A'} • {heroItem.genre || ''}</p>
               <button className="btn-primary" onClick={() => openPlayer(heroItem)}>
-                <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M8 5v14l11-7z"/></svg>
+                <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M8 5v14l11-7z" /></svg>
                 Ver Ahora
               </button>
             </div>
@@ -325,7 +370,7 @@ export default function Home() {
           <h2 className="section-title">
             Resultados ({filteredItems.length}) {isSearching && '- Búsqueda Global'}
           </h2>
-          
+
           {currentLoading ? (
             <div className="loader"></div>
           ) : gridItems.length > 0 ? (
@@ -337,7 +382,7 @@ export default function Home() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={item.poster_url || 'https://via.placeholder.com/300x450?text=Sin+Poster'} loading="lazy" alt={item.title} />
                       <div className="card-overlay">
-                        <svg viewBox="0 0 24 24" fill="white" width="48" height="48"><path d="M8 5v14l11-7z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="white" width="48" height="48"><path d="M8 5v14l11-7z" /></svg>
                       </div>
                     </div>
                     <div className="card-info">
@@ -345,7 +390,7 @@ export default function Home() {
                       <div className="card-meta">
                         <span>{item.year || ''}</span>
                         <span className="rating">
-                          <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" style={{marginRight:'4px'}}><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                          <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" style={{ marginRight: '4px' }}><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                           {item.rating || 'N/A'}
                         </span>
                       </div>
@@ -386,22 +431,22 @@ export default function Home() {
       {/* Player Modal */}
       <div className={`player-modal ${playerItem ? 'active' : ''}`}>
         <button className="close-btn" onClick={closePlayer}>&times;</button>
-        
+
         {playerItem && (
           <div className="provider-selector">
-            <button 
+            <button
               className={`provider-btn ${activeProvider === 'main' ? 'active' : ''}`}
               onClick={() => setActiveProvider('main')}
             >
               🚀 Servidor Principal
             </button>
-            <button 
+            <button
               className={`provider-btn ${activeProvider === 'latino' ? 'active' : ''}`}
               onClick={() => setActiveProvider('latino')}
             >
               🇲🇽 Servidor Latino
             </button>
-            <button 
+            <button
               className={`provider-btn ${activeProvider === 'alternative' ? 'active' : ''}`}
               onClick={() => setActiveProvider('alternative')}
             >
@@ -419,9 +464,9 @@ export default function Home() {
         {playerItem && playerItem.type === 'tv' && (
           <div className="tv-controls">
             <div className="season-selector-wrapper">
-              <select 
+              <select
                 className="custom-select"
-                value={activeSeason} 
+                value={activeSeason}
                 onChange={(e) => {
                   setActiveSeason(parseInt(e.target.value));
                   setActiveEpisode(1);
@@ -437,13 +482,32 @@ export default function Home() {
                   <option value={1}>Temporada 1</option>
                 )}
               </select>
+              <div className="episode-navigation-buttons" style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
+                <button
+                  className="provider-btn"
+                  onClick={goToPrevEpisode}
+                  disabled={activeSeason === 1 && activeEpisode === 1}
+                  style={{ opacity: (activeSeason === 1 && activeEpisode === 1) ? 0.5 : 1, padding: '0.4rem 1rem' }}
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style={{ verticalAlign: 'middle', marginRight: '4px' }}><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z" /></svg>
+                  Anterior
+                </button>
+                <button
+                  className="provider-btn"
+                  onClick={goToNextEpisode}
+                  style={{ padding: '0.4rem 1rem' }}
+                >
+                  Siguiente
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style={{ verticalAlign: 'middle', marginLeft: '4px' }}><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" /></svg>
+                </button>
+              </div>
             </div>
-            
+
             <div className="episodes-list">
               {seasonEpisodes.length > 0 ? (
                 seasonEpisodes.map((ep) => (
-                  <div 
-                    key={ep.episode_number} 
+                  <div
+                    key={ep.episode_number}
                     className={`episode-card ${activeEpisode === ep.episode_number ? 'active' : ''}`}
                     onClick={() => setActiveEpisode(ep.episode_number)}
                   >
