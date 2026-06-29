@@ -727,3 +727,70 @@ nav a.active::after {
         font-size: 1.8rem;
     }
 }
+
+/* ============================================================
+   Extensiones v2: TV en vivo + Anime + estados del reproductor
+   ============================================================ */
+
+/* Proveedor deshabilitado (id faltante para ese título) */
+.provider-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.provider-btn:disabled:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+}
+
+/* Cards de canales (logo en vez de poster) */
+.card.logo .card-img-wrapper {
+    padding-top: 100%; /* cuadrado para logos */
+    background: radial-gradient(circle at center, #1a1f2e 0%, #0b0e16 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.card.logo img {
+    position: absolute;
+    object-fit: contain;
+    padding: 18%;
+}
+
+/* Reproductor de TV en vivo (HLS) */
+.live-video {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    object-fit: contain;
+}
+
+/* Estado de error / carga dentro del contenedor 16:9 */
+.live-error {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+.live-error p {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.live-error span {
+    font-size: 0.95rem;
+    max-width: 360px;
+}
+
+/* Toggle Sub/Dub de anime */
+.anime-toggle {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
