@@ -96,7 +96,10 @@ export async function GET(request: Request) {
     const text = await res.text();
     // Algunos hosts devuelven content-type genérico aunque sea m3u8: confirma por contenido.
     if (text.includes('#EXTM3U')) {
-      const rewritten = rewriteManifest(text, upstream.toString(), `${origin}/api/live/proxy`, ua, ref);
+      // CRÍTICO: resolver relativos contra la URL FINAL tras redirecciones (res.url),
+      // no contra la original. Muchos streams usan redirectores (jmp2.uk, etc.).
+      const base = res.url || upstream.toString();
+      const rewritten = rewriteManifest(text, base, `${origin}/api/live/proxy`, ua, ref);
       return new NextResponse(rewritten, {
         status: 200,
         headers: { ...CORS, 'Content-Type': 'application/vnd.apple.mpegurl' },

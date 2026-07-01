@@ -17,6 +17,9 @@ const SPANISH_COUNTRIES = new Set([
 // Grupos de Free-TV que consideramos en español/latino.
 const FAST_SPANISH_RE = /spain|españa|espa|mexic|méxic|argentin|chile|colombia|per[uú]|venezuela|ecuador|latino|spanish|español/i;
 
+// Filtro de deportes/fútbol por nombre de canal (para FAST y como refuerzo).
+const SPORTS_NAME_RE = /deporte|sport|f[uú]tbol|\bgol\b|dazn|espn|fox\s*sport|tyc|tudn|directv\s*sport|win\s*sport|liga|premier|champion|bein|afa|conmebol/i;
+
 // Regex por país para filtrar los grupos (group-title) de Free-TV.
 const COUNTRY_FAST_RE: Record<string, RegExp> = {
   mx: /mexic|méxic/i,
@@ -80,6 +83,12 @@ async function buildIptvOrg(country?: string | null): Promise<MediaItem[]> {
     } else if (!SPANISH_COUNTRIES.has(cc)) {
       continue;
     }
+    // Solo canales deportivos (categoría 'sports' o nombre deportivo).
+    const isSports =
+      (Array.isArray(ch.categories) && ch.categories.includes('sports')) ||
+      SPORTS_NAME_RE.test(ch.name || '');
+    if (!isSports) continue;
+
     const stream = streamByChannel.get(ch.id);
     if (!stream) continue; // sin stream reproducible
 
@@ -113,7 +122,7 @@ async function buildFast(country?: string | null): Promise<MediaItem[]> {
   const entries = parseM3U(text);
 
   return entries
-    .filter((e) => e.group && re!.test(e.group))
+    .filter((e) => e.group && re!.test(e.group) && SPORTS_NAME_RE.test(e.name))
     .map((e, i) => ({
       id: `fast-${i}-${e.tvgId || e.name}`,
       kind: 'live' as const,

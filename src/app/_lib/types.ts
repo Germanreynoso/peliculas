@@ -33,6 +33,6 @@ export interface TabDef {
 export const TABS: TabDef[] = [
   { id: 'movies', label: 'Películas' },
   { id: 'tv', label: 'Series' },
-  { id: 'live', label: 'TV en vivo' },
+  { id: 'live', label: 'Fútbol' },
   { id: 'anime', label: 'Anime' },
 ];

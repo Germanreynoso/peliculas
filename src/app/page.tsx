@@ -208,7 +208,7 @@ export default function Home() {
         <Filters
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          searchPlaceholder={isLive ? 'Buscar canal...' : 'Buscar por nombre...'}
+          searchPlaceholder={isLive ? 'Buscar canal de fútbol...' : 'Buscar por nombre...'}
           primaryOptions={primaryOptions}
           primaryValue={selectedPrimary}
           onPrimaryChange={onPrimaryChange}
@@ -228,7 +228,7 @@ export default function Home() {
           title={sectionTitle}
           emptyMessage={
             isLive
-              ? 'No hay canales disponibles. Prueba con otro país.'
+              ? 'No hay canales de fútbol disponibles ahora. Prueba con otro país (muchos solo emiten durante partidos).'
               : 'No se encontraron resultados para tu búsqueda.'
           }
           onLoadMore={loadMore}
