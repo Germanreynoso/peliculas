@@ -206,6 +206,10 @@ export default function Home() {
       />
 
       <main id="main-content">
+        <div className="donation-banner">
+          <DonationBox />
+        </div>
+
         <Filters
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -250,7 +254,6 @@ export default function Home() {
             <a href="#main-content">Catálogo</a>
             <a href="#">Contacto</a>
           </div>
-          <DonationBox />
           <p className="copyright">© {new Date().getFullYear()} Cinema Dolphin. Creado con amor por el equipo de diseño.</p>
         </div>
       </footer>

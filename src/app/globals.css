@@ -91,7 +91,7 @@ nav a.active::after {
 
 /* Filters Section */
 .filters-section {
-    padding: 100px 5% 0; /* Espacio para el navbar */
+    padding: 1.5rem 5% 0;
     display: flex;
     gap: 1rem;
     align-items: center;
@@ -236,21 +236,28 @@ nav a.active::after {
 }
 
 /* Donaciones */
+.donation-banner {
+    padding: 90px 5% 0; /* Espacio para el navbar */
+    background: var(--bg-color);
+}
+
 .donation-box {
     width: 100%;
-    padding: 1.25rem 1.5rem;
+    padding: 1rem 1.5rem;
     border: 1px solid var(--glass-border);
     border-radius: 14px;
     background: var(--card-bg);
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.9rem;
+    justify-content: center;
+    gap: 0.9rem 1.5rem;
 }
 
 .donation-text {
     color: var(--text-primary) !important;
     font-size: 0.95rem;
+    text-align: center;
 }
 
 .donation-alias-row {
@@ -699,8 +706,11 @@ nav a.active::after {
     }
 
     /* Filters Section */
-    .filters-section {
+    .donation-banner {
         padding: 80px 4% 0;
+    }
+    .filters-section {
+        padding: 1rem 4% 0;
         justify-content: center;
         gap: 0.8rem;
     }
