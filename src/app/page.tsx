@@ -8,6 +8,7 @@ import Filters from './_components/Filters';
 import Hero from './_components/Hero';
 import ContentGrid from './_components/ContentGrid';
 import PlayerModal from './_components/PlayerModal';
+import DonationBox from './_components/DonationBox';
 
 const LIVE_COUNTRIES = [
   { value: 'mx', label: 'México' },
@@ -249,6 +250,7 @@ export default function Home() {
             <a href="#main-content">Catálogo</a>
             <a href="#">Contacto</a>
           </div>
+          <DonationBox />
           <p className="copyright">© {new Date().getFullYear()} Cinema Dolphin. Creado con amor por el equipo de diseño.</p>
         </div>
       </footer>
